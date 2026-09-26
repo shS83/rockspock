@@ -1,10 +1,17 @@
 from enum import StrEnum
 from random import choice
-import time
-import pygame as pg
+import sys
 
-pg.init()
-clock = pg.time.Clock()
+from keyboard import (
+    KEY_LEFT,
+    KEY_RIGHT,
+    KEY_ENTER,
+    KEY_ESCAPE,
+    read_key,
+    setup_keyboard,
+    restore_keyboard,
+)
+
 
 class Combatants(StrEnum):
     ROCK = "Rock"
@@ -13,7 +20,9 @@ class Combatants(StrEnum):
     LIZARD = "Lizard"
     SPOCK = "Spock"
 
+
 c = Combatants
+
 
 colors = {
     c.ROCK: "\033[33m",
@@ -23,66 +32,97 @@ colors = {
     c.SPOCK: "\033[34m",
 }
 
+
 RESET = "\033[0m"
 UNDERLINE = "\033[4m"
 
+
 combatant_list = list(c)
+
 cpu_choice = choice(combatant_list)
 player_choice = ""
 
+selected = 0
+
+
 combatants = {
-        c.ROCK: {
-            "beats": [c.SCISSORS, c.LIZARD],
-            "selected": True
-        },
-        c.PAPER: {
-            "beats": [c.ROCK, c.SPOCK],
-            "selected": False
-        },
-        c.SCISSORS: {
-            "beats": [c.PAPER, c.LIZARD],
-            "selected": False
-        },
-        c.LIZARD: {
-            "beats": [c.PAPER, c.SPOCK],
-            "selected": False
-        },
-        c.SPOCK: {
-            "beats": [c.SCISSORS, c.ROCK],
-            "selected": False
-        }
+    c.ROCK: {
+        "beats": [c.SCISSORS, c.LIZARD],
+    },
+    c.PAPER: {
+        "beats": [c.ROCK, c.SPOCK],
+    },
+    c.SCISSORS: {
+        "beats": [c.PAPER, c.LIZARD],
+    },
+    c.LIZARD: {
+        "beats": [c.PAPER, c.SPOCK],
+    },
+    c.SPOCK: {
+        "beats": [c.SCISSORS, c.ROCK],
+    },
 }
+
 
 def draw_combatants():
     print("\r\033[2K", end="")
 
-    for i, val in enumerate(c):
-        selected = combatants[val]["selected"]
-
-        if selected:
+    for i, val in enumerate(combatant_list):
+        if i == selected:
             print(UNDERLINE, end="")
 
         print(f"{colors[val]}{val}{RESET}", end="")
 
-        if i < len(c) - 1:
+        if i < len(combatant_list) - 1:
             print(", ", end="")
 
-while player_choice == "":
+    sys.stdout.flush()
+
+
+setup_keyboard()
+
+try:
     draw_combatants()
-    for event in pg.event.get():
-        if event.type == pg.QUIT:
+
+    while player_choice == "":
+        key = read_key()
+
+        if key is None:
+            continue
+
+        if key == KEY_RIGHT:
+            selected = (selected + 1) % len(combatant_list)
+            draw_combatants()
+
+        elif key == KEY_LEFT:
+            selected = (selected - 1) % len(combatant_list)
+            draw_combatants()
+
+        elif key == KEY_ENTER:
+            player_choice = combatant_list[selected]
             break
-        if event.type == pg.KEYDOWN:
-            if event.key == pg.K_ESCAPE:
-                break
-            if event.key == pg.K_RIGHT:
-                combatants[combatant_list[selected]]["selected"] = False
-                selected = (selected + 1) % len(combatant_list)
-                combatants[combatant_list[selected]]["selected"] = True
 
-            if event.key == pg.K_LEFT:
-                combatants[combatant_list[selected]]["selected"] = False
-                selected = (selected - 1) % len(combatant_list)
-                combatants[combatant_list[selected]]["selected"] = True
+        elif key == KEY_ESCAPE:
+            break
 
-    clock.tick(60)
+finally:
+    restore_keyboard()
+
+
+print()
+
+def check_winner():
+    global player_choice, cpu_choice
+    print(f"You chose: {combatant_list[selected]}")
+    if cpu_choice == player_choice:
+        print(f"Computer: {cpu_choice}\nIT'S A TIE!")
+        return
+    elif cpu_choice in combatants[combatant_list[selected]]["beats"]:
+        print(f"Computer: {cpu_choice}\nYOU WON!")
+        return
+    else:
+        print(f"Computer: {cpu_choice}\nYOU LOST!")
+        return
+    return
+
+check_winner()
