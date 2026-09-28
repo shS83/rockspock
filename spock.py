@@ -2,16 +2,7 @@ from enum import StrEnum
 from random import choice
 import sys
 
-from keyboard import (
-    KEY_LEFT,
-    KEY_RIGHT,
-    KEY_ENTER,
-    KEY_ESCAPE,
-    read_key,
-    setup_keyboard,
-    restore_keyboard,
-)
-
+from keyio import Keyboard, Key
 
 class Combatants(StrEnum):
     ROCK = "Rock"
@@ -22,7 +13,6 @@ class Combatants(StrEnum):
 
 
 c = Combatants
-
 
 colors = {
     c.ROCK: "\033[33m",
@@ -79,35 +69,34 @@ def draw_combatants():
     sys.stdout.flush()
 
 
-setup_keyboard()
+draw_combatants()
 
-try:
-    draw_combatants()
+with Keyboard() as keyboard:
 
-    while player_choice == "":
-        key = read_key()
+    running = True
+
+    while running:
+        key = keyboard.read()
 
         if key is None:
             continue
 
-        if key == KEY_RIGHT:
-            selected = (selected + 1) % len(combatant_list)
-            draw_combatants()
+        match key:
 
-        elif key == KEY_LEFT:
-            selected = (selected - 1) % len(combatant_list)
-            draw_combatants()
+            case Key.LEFT:
+                selected = (selected - 1) % len(combatant_list)
+                draw_combatants()
 
-        elif key == KEY_ENTER:
-            player_choice = combatant_list[selected]
-            break
+            case Key.RIGHT:
+                selected = (selected + 1) % len(combatant_list)
+                draw_combatants()
 
-        elif key == KEY_ESCAPE:
-            break
+            case Key.ENTER:
+                player_choice = combatant_list[selected]
+                running = False
 
-finally:
-    restore_keyboard()
-
+            case Key.ESCAPE:
+                running = False
 
 print()
 
