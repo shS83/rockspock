@@ -16,6 +16,8 @@ else:
     import termios
     import tty
 
+_input_fd = None
+_owns_tty_fd = None
 
 def setup_keyboard():
     global _old_terminal_settings
@@ -23,25 +25,50 @@ def setup_keyboard():
     if os.name == "nt":
         return
 
-    fd = sys.stdin.fileno()
+    fd = _get_unix_fd()
+
     _old_terminal_settings = termios.tcgetattr(fd)
-    tty.setraw(fd)
+
+    # Parempi terminaalipelille kuin setraw():
+    tty.setcbreak(fd)
+
+
+def _get_unix_fd():
+    global _input_fd, _owns_tty_fd
+
+    if _input_fd is not None:
+        return _input_fd
+
+    if sys.stdin.isatty():
+        _input_fd = sys.stdin.fileno()
+    else:
+        _input_fd = os.open("/dev/tty", os.O_RDONLY)
+        _owns_tty_fd = True
+
+    return _input_fd
 
 
 def restore_keyboard():
     global _old_terminal_settings
+    global _input_fd
+    global _owns_tty_fd
 
     if os.name == "nt":
         return
 
-    if _old_terminal_settings is not None:
+    if _old_terminal_settings is not None and _input_fd is not None:
         termios.tcsetattr(
-            sys.stdin.fileno(),
+            _input_fd,
             termios.TCSADRAIN,
             _old_terminal_settings,
         )
 
-        _old_terminal_settings = None
+    if _owns_tty_fd and _input_fd is not None:
+        os.close(_input_fd)
+
+    _old_terminal_settings = None
+    _input_fd = None
+    _owns_tty_fd = False
 
 
 def read_key_windows():
@@ -74,7 +101,7 @@ def read_key_windows():
 
 
 def read_key_unix():
-    fd = sys.stdin.fileno()
+    fd = _get_unix_fd()
 
     ready, _, _ = select.select([fd], [], [], 0)
 
@@ -84,7 +111,7 @@ def read_key_unix():
     key = os.read(fd, 1)
 
     if key == b"\x1b":
-        # Tarkista onko kyseessä ESC vai escape sequence.
+        # ESC voi olla itsenäinen ESC tai nuolinäppäimen alku.
         ready, _, _ = select.select([fd], [], [], 0.01)
 
         if ready:
