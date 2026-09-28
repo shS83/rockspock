@@ -5,7 +5,7 @@ requires-python = ">=3.14"
 [[package]]
 name = "keyio"
 version = "0.1.0"
-source = { git = "https://github.com/shS83/keyio.git#88114234e5ad7aa8a99f2cdabc5b779899f4e809" }
+source = { git = "https://github.com/shS83/keyio.git?rev=v0.1.0#88114234e5ad7aa8a99f2cdabc5b779899f4e809" }
 
 [[package]]
 name = "rockspock"
@@ -16,4 +16,4 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "keyio", git = "https://github.com/shS83/keyio.git" }]
+requires-dist = [{ name = "keyio", git = "https://github.com/shS83/keyio.git?rev=v0.1.0" }]

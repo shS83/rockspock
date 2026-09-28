@@ -9,4 +9,4 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-keyio = { git = "https://github.com/shS83/keyio.git" }
+keyio = { git = "https://github.com/shS83/keyio.git", rev = "v0.1.0" }
